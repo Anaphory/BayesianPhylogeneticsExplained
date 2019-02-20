@@ -145,21 +145,18 @@ assert data_pattern({1: [1, 3], 2: [1, 2], 3: [2, 3], 4:[2, 2]})[1] == data_patt
 assert data_pattern({1: [1, 3], 2: [1, 2], 3: [2, 3], 4:[2, 2]})[1] != data_pattern({1: [1, 1], 2: [1, 1], 3: [2, 2], 4:[2, 2]})[1]
 assert data_pattern({1: [1, 1], 2: [1, 2], 3: [2, 1], 4:[2, 2]})[1] == data_pattern({1: [1, 1], 2: [1, 2], 3: [2, 2], 4:[2, 1]})[1]
 
-def naive_monte_carlo(data, depth=15, visit_bad_trees=True, verbose=True):
+def naive_monte_carlo(data, tree_generator=random_tree, verbose=True):
     recent_languages = len(data)
     names, classes = data_pattern(data)
     tree = None
     while True:
-        suggested_tree = random_tree(depth, root=newick.Node('s'))
-        if len(suggested_tree.get_leaves()) != len(data):
-            if visit_bad_trees:
-                if verbose:
-                    print("Wrong number of leaves: {:}".format(suggested_tree.newick))
-                yield None
-                continue
-        else:
-            tree = suggested_tree
+        tree = tree_generator()
         if tree is None:
+            continue
+        if len(tree.get_leaves()) != len(data):
+            if verbose:
+                print("Wrong number of leaves: {:}".format(tree.newick))
+            yield None
             continue
         s_data = random_observed_data(tree)
         s_names, s_classes = data_pattern(s_data)
@@ -188,42 +185,43 @@ except (json.JSONDecodeError, FileNotFoundError):
     with open("data.json", "w") as datafile:
         json.dump(true_data, datafile, indent=2)
 
-print(true_tree.newick)
-print(true_data)
-input()
+if __name__ == "__main__":
+    print(true_tree.newick)
+    print(true_data)
+    input()
 
-with open("fine_trees.nex", "w") as treeset:
-    for i, tree in enumerate(naive_monte_carlo(true_data)):
-        if tree:
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            print(tree.newick)
-            for node in tree.walk():
-                if node.name in true_data:
-                    continue
-                node.name = None
-            print(tree.newick, file=treeset, end=";\n", flush=True)
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        if i > 8000:
-            break
-    for i, tree in enumerate(naive_monte_carlo(true_data, visit_bad_trees=False)):
-        if tree:
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            print(tree.newick)
-            for node in tree.walk():
-                if node.name in true_data:
-                    continue
-                node.name = None
-            print(tree.newick, file=treeset, end=";\n", flush=True)
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-        if i > 8000:
-            break
-    for i, tree in enumerate(naive_monte_carlo(true_data, visit_bad_trees=False, verbose=False)):
-        if tree:
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            print(tree.newick)
-            for node in tree.walk():
-                if node.name in true_data:
-                    continue
-                node.name = None
-            print(tree.newick, file=treeset, end=";\n", flush=True)
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    with open("fine_trees.nex", "w") as treeset:
+        for i, tree in enumerate(naive_monte_carlo(true_data)):
+            if tree:
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print(tree.newick)
+                for node in tree.walk():
+                    if node.name in true_data:
+                        continue
+                    node.name = None
+                print(tree.newick, file=treeset, end=";\n", flush=True)
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            if i > 8000:
+                break
+        for i, tree in enumerate(naive_monte_carlo(true_data, visit_bad_trees=False)):
+            if tree:
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print(tree.newick)
+                for node in tree.walk():
+                    if node.name in true_data:
+                        continue
+                    node.name = None
+                print(tree.newick, file=treeset, end=";\n", flush=True)
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            if i > 8000:
+                break
+        for i, tree in enumerate(naive_monte_carlo(true_data, visit_bad_trees=False, verbose=False)):
+            if tree:
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print(tree.newick)
+                for node in tree.walk():
+                    if node.name in true_data:
+                        continue
+                    node.name = None
+                print(tree.newick, file=treeset, end=";\n", flush=True)
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")

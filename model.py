@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
+# -*- encoding: utf-8 -*-
+from __future__ import print_function
 
 import itertools
 import collections
@@ -13,8 +15,21 @@ all_cards = """🂱 🂲 🂳 🂴 🂵 🂶 🂷 🂸 🂹 🂺
 🃁 🃂 🃃 🃄 🃅 🃆 🃇 🃈 🃉 🃊
 🃑 🃒 🃓 🃔 🃕 🃖 🃗 🃘 🃙 🃚""".split()
 
-def draw_card():
-    return all_cards[numpy.random.randint(len(all_cards))]
+def draw_card(cards=all_cards):
+    return cards[numpy.random.randint(len(cards))]
+
+
+with open("real_forms.json") as lexicon:
+    real_words = json.load(lexicon)
+
+real_words = [w for w in real_words if w]
+
+with open("real_forms.json", "w") as lexicon:
+    json.dump(real_words, lexicon, indent=2)
+
+def invent_random_word():
+    return ''.join(draw_card(real_words))
+
 
 def random_tree(depth=15, split_on="🂱🂡🃁🃑", root=None):
     if root is None:
@@ -112,13 +127,13 @@ def dollo_model_on_tree(tree, new_form="🂡🂢🂣🂤🂥", existing_forms=No
     return data
 
 
-def random_observed_data(tree, probabilities=["🂡🂢🂣"]*3):
+def random_observed_data(tree, models=[dollo_model_on_tree]*3):
     leaves = [n.name for n in tree.get_leaves()]
     data = {l: [] for l in leaves}
-    for prob in probabilities:
-            for language, value in dollo_model_on_tree(tree, prob).items():
-                if language in leaves:
-                    data[language].append(value)
+    for model in models:
+        for language, value in model(tree).items():
+            if language in leaves:
+                data[language].append(value)
     return data
 
 
@@ -145,7 +160,7 @@ assert data_pattern({1: [1, 3], 2: [1, 2], 3: [2, 3], 4:[2, 2]})[1] == data_patt
 assert data_pattern({1: [1, 3], 2: [1, 2], 3: [2, 3], 4:[2, 2]})[1] != data_pattern({1: [1, 1], 2: [1, 1], 3: [2, 2], 4:[2, 2]})[1]
 assert data_pattern({1: [1, 1], 2: [1, 2], 3: [2, 1], 4:[2, 2]})[1] == data_pattern({1: [1, 1], 2: [1, 2], 3: [2, 2], 4:[2, 1]})[1]
 
-def naive_monte_carlo(data, tree_generator=random_tree, verbose=True):
+def naive_monte_carlo(data, tree_generator=random_tree, models=[dollo_model_on_tree]*3, verbose=True):
     recent_languages = len(data)
     names, classes = data_pattern(data)
     tree = None
@@ -158,7 +173,7 @@ def naive_monte_carlo(data, tree_generator=random_tree, verbose=True):
                 print("Wrong number of leaves: {:}".format(tree.newick))
             yield None
             continue
-        s_data = random_observed_data(tree)
+        s_data = random_observed_data(tree, models)
         s_names, s_classes = data_pattern(s_data)
         if classes != s_classes:
             if verbose:

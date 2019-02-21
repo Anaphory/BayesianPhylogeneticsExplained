@@ -184,23 +184,23 @@ def naive_monte_carlo(data, tree_generator=random_tree, models=[dollo_model_on_t
             tree.get_node(old).name = new
         yield tree
 
-try:
-    with open("true.tree") as treefile:
-        true_tree = newick.load(treefile)[0]
-except (ValueError, FileNotFoundError):
-    true_tree = random_tree()
-    with open("true.tree", "w") as treefile:
-            print(true_tree.newick, file=treefile, end=";\n", flush=True)
+if __name__ == "__main__":
+    try:
+        with open("true.tree") as treefile:
+            true_tree = newick.load(treefile)[0]
+    except (ValueError, FileNotFoundError):
+        true_tree = random_tree()
+        with open("true.tree", "w") as treefile:
+                print(true_tree.newick, file=treefile, end=";\n", flush=True)
 
-try:
-    with open("data.json") as datafile:
-        true_data = json.load(datafile)
-except (json.JSONDecodeError, FileNotFoundError):
-    true_data = random_observed_data(true_tree)
+    try:
+        with open("data.json") as datafile:
+            true_data = json.load(datafile)
+    except (json.JSONDecodeError, FileNotFoundError):
+        true_data = random_observed_data(true_tree)
     with open("data.json", "w") as datafile:
         json.dump(true_data, datafile, indent=2)
 
-if __name__ == "__main__":
     print(true_tree.newick)
     print(true_data)
     input()
